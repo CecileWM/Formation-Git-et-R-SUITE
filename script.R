@@ -1,5 +1,5 @@
 rm(list = ls())
-setwd("/home/onyxia/formation-bonnes-pratiques-R")
+#setwd("/home/onyxia/formation-bonnes-pratiques-R")
 
 if (!require('ggplot2')) install.packages('ggplot2')
 if (!require('stringr')) install.packages('stringr')
@@ -10,9 +10,8 @@ if (!require('tidyverse')) install.packages('tidyverse')
 library(tidyverse)
 library(dplyr)
 
-# j'importe les données avec read_csv2 parce que c'est un csv avec des ; et que read_csv attend comme separateur des , 
-df <- readr::read_csv2(
-  "/home/onyxia/formation-bonnes-pratiques-R/individu_reg.csv",
+# import des données avec read_csv2 (séparateur = ;) , 
+df <- readr::read_csv2(  "individu_reg.csv",
   col_names = c("region", "aemm", "aged", "anai","catl","cs1", "cs2", "cs3", "couple", "na38", "naf08", "pnai12", "sexe", "surf", "tp", "trans", "ur"))
 
 # y a un truc qui va pas avec l'import, je corrige
