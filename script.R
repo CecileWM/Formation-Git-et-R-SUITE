@@ -13,25 +13,7 @@ library(dplyr)
 
 api_token <- yaml::read_yaml("env.yaml")[[API_TOKEN]]
 
-# Définition de fonctions ------------------------
-
-# fonction de stat agregee
-fonction_de_stat_agregee <- function(a, b = "moyenne", ...) {
-  checkvalue <- F
-  for (x in c("moyenne", "variance", "ecart-type", "sd")) {
-    checkvalue <- (checkvalue | b == x)
-  }
-  if (checkvalue == FALSE) stop("statistique non supportée")
-  
-  if (b == "moyenne") {
-    x <- mean(a, na.rm = T, ...)
-  } else if (b == "ecart-type" | b == "sd") {
-    x <- sd(a, na.rm = T, ...)
-  } else if (b == "variance") {
-    x <- var(a, na.rm = T, ...)
-  }
-  return(x)
-}
+source("R/functions.R", encoding = "UTF-8")
 
 # Import des données -----------------------------
 
