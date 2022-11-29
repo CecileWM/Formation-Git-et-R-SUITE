@@ -11,6 +11,8 @@ library(tidyverse)
 library(MASS)
 library(dplyr)
 
+api_token <- yaml::read_yaml("env.yaml")[[API_TOKEN]]
+
 # Définition de fonctions ------------------------
 
 # fonction de stat agregee
@@ -144,8 +146,6 @@ fonction_de_stat_agregee(df2 %>%
   filter(sexe == "Femme" & couple == "2") %>%
   mutate(aged = as.numeric(aged)) %>%
   pull(aged))
-
-api_pwd <- "trotskitueleski$1917"
 
 # modelisation ------------------------------------------------
 
