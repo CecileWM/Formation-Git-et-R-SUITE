@@ -1,5 +1,6 @@
-lintr::use_lintr(type = "tidyverse")
 rm(list = ls())
+
+# Librairies -------------------------------------
 
 if (!require("ggplot2")) install.packages("ggplot2")
 if (!require("stringr")) install.packages("stringr")
@@ -7,21 +8,46 @@ if (!require("dplyr")) install.packages("dplyr")
 if (!require("tidyverse")) install.packages("tidyverse")
 
 library(tidyverse)
+library(MASS)
 library(dplyr)
+
+# Définition de fonctions ------------------------
+
+# fonction de stat agregee
+fonction_de_stat_agregee <- function(a, b = "moyenne", ...) {
+  checkvalue <- F
+  for (x in c("moyenne", "variance", "ecart-type", "sd")) {
+    checkvalue <- (checkvalue | b == x)
+  }
+  if (checkvalue == FALSE) stop("statistique non supportée")
+  
+  if (b == "moyenne") {
+    x <- mean(a, na.rm = T, ...)
+  } else if (b == "ecart-type" | b == "sd") {
+    x <- sd(a, na.rm = T, ...)
+  } else if (b == "variance") {
+    x <- var(a, na.rm = T, ...)
+  }
+  return(x)
+}
+
+# Import des données -----------------------------
 
 # import des données avec read_csv2 (séparateur = ;) ,
 df <- readr::read_csv2("individu_reg.csv",
-  col_names = c("region", "aemm", "aged", "anai", "catl", "cs1", "cs2", "cs3", "couple", "na38", "naf08", "pnai12", "sexe", "surf", "tp", "trans", "ur")
+  col_select = c("region", "aemm", "aged", "anai", "catl", "cs1", "cs2", "cs3",
+                "couple", "na38", "naf08", "pnai12", "sexe", "surf", "tp",
+                "trans", "ur")
 )
 
-# y a un truc qui va pas avec l'import, je corrige
-colnames(df) <- df[1, ]
-df <- df[2:nrow(df), ]
-
+# Restructuration des données ---------------------
 df2 <- df %>%
-  select(c("region", "dept", "aemm", "aged", "anai", "catl", "cs1", "cs2", "cs3", "couple", "na38", "naf08", "pnai12", "sexe", "surf", "tp", "trans", "ur"))
+  dplyr::select(c("region", "dept", "aemm", "aged", "anai", "catl", "cs1",
+                  "cs2", "cs3", "couple", "na38", "naf08", "pnai12", "sexe",
+                  "surf", "tp", "trans", "ur"))
 print(df2, 20)
 
+# Statistiques descriptives ------------------------------
 
 # combien de professions
 print("Nombre de professions :")
@@ -37,6 +63,21 @@ decennie_a_partir_annee <- function(ANNEE) {
   return(ANNEE - ANNEE %% 10)
 }
 
+# stats surf par statut
+df3 <- tibble(df2 %>%
+                group_by(couple, surf) %>%
+                summarise(x = n()) %>%
+                group_by(couple) %>%
+                mutate(y = 100 * x / sum(x)))
+
+# stats trans par statut
+df3 <- tibble(df2 %>%
+                group_by(couple, trans) %>%
+                summarise(x = n()) %>%
+                group_by(couple) %>%
+                mutate(y = 100 * x / sum(x)))
+
+# Graphiques ------------------------------------------------------
 df2 %>%
   select(aged) %>%
   ggplot(.) +
@@ -58,48 +99,16 @@ ggplot(df %>%
   geom_bar(aes(x = as.numeric(aged), y = SH_sexe), stat = "identity") +
   geom_point(aes(x = as.numeric(aged), y = SH_sexe), stat = "identity", color = "red") +
   coord_cartesian(c(0, 100))
-# correction (qu'il faudra retirer)
-# ggplot(
-#   df2 %>% group_by(aged, sexe) %>% summarise(SH_sexe = n()) %>% group_by(aged) %>% mutate(SH_sexe = SH_sexe/sum(SH_sexe)) %>% filter(sexe==1)
-# ) + geom_bar(aes(x = as.numeric(aged), y = SH_sexe), stat="identity") + geom_point(aes(x = as.numeric(aged), y = SH_sexe), stat="identity", color = "red") + coord_cartesian(c(0,100))
-
-# stats surf par statut
-df3 <- tibble(df2 %>%
-  group_by(couple, surf) %>%
-  summarise(x = n()) %>%
-  group_by(couple) %>%
-  mutate(y = 100 * x / sum(x)))
 
 ggplot(df3) %>%
   geom_bar(aes(x = surf, y = y, color = couple), stat = "identity", position = "dodge")
 
-# stats trans par statut
-df3 <- tibble(df2 %>%
-  group_by(couple, trans) %>%
-  summarise(x = n()) %>%
-  group_by(couple) %>%
-  mutate(y = 100 * x / sum(x)))
 p <- ggplot(df3) +
   geom_bar(aes(x = trans, y = y, color = couple), stat = "identity", position = "dodge")
 
 dir.create("output")
-# setwd("ome/onyxia/formation-bonnes-pratiques-R/output")
-
 ggsave("p.png", p)
 
-# recode valeurs manquantes
-# valeursManquantes <- data.frame(colonne = c(""), NBRE = c(NA))
-# for (i in 1:length(colnames(df2))){
-#  x = df2[,i]
-#  j=0
-#  t <-0
-#  for (j in 1:nrow(x)){
-#    if (is.na(pull(x[j,])) == T) t <- t+1
-#  }
-#  data.frame(
-#
-#  )
-# }
 df2[df2$na38 == "ZZ", "na38"] <- NA
 df2[df2$trans == "Z", "trans"] <- NA
 df2[df2$tp == "Z", "tp"] <- NA
@@ -113,23 +122,6 @@ library(forcats)
 df2$sexe <-
   fct_recode(df2$sexe, "Homme" = "0", "Femme" = "1")
 
-# fonction de stat agregee
-fonction_de_stat_agregee <- function(a, b = "moyenne", ...) {
-  checkvalue <- F
-  for (x in c("moyenne", "variance", "ecart-type", "sd")) {
-    checkvalue <- (checkvalue | b == x)
-  }
-  if (checkvalue == FALSE) stop("statistique non supportée")
-
-  if (b == "moyenne") {
-    x <- mean(a, na.rm = T, ...)
-  } else if (b == "ecart-type" | b == "sd") {
-    x <- sd(a, na.rm = T, ...)
-  } else if (b == "variance") {
-    x <- var(a, na.rm = T, ...)
-  }
-  return(x)
-}
 
 fonction_de_stat_agregee(rnorm(10))
 fonction_de_stat_agregee(rnorm(10), "ecart-type")
@@ -155,8 +147,8 @@ fonction_de_stat_agregee(df2 %>%
 
 api_pwd <- "trotskitueleski$1917"
 
-# modelisation
-library(MASS)
+# modelisation ------------------------------------------------
+
 df3 <- df2 %>%
   select(surf, cs1, ur, couple, aged) %>%
   filter(surf != "Z")
